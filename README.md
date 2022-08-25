@@ -1,5 +1,3 @@
-# Super Plumber Bros Demo
-
 ![banner](https://user-images.githubusercontent.com/10568159/186654205-dcecc6c4-34c9-418a-afe3-f987e36368d0.png)
 
 ![Plumbers-1](https://user-images.githubusercontent.com/10568159/186654282-8d63b6ac-ac78-4230-b9b8-dbdf9847bfcb.jpg)
