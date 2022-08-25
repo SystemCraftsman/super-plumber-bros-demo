@@ -1,0 +1,254 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Super Plumber Bros</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/wingcss/0.1.8/wing.min.css"/>
+    <style>
+        body {
+            background-color: rgb(255, 255, 255);
+        }
+        #canvas {
+            border:1px solid rgb(0, 0, 0);
+            cursor: url('./images/wrench.png'), auto;
+            background: url('./images/background.png') no-repeat 0 0;
+            background-color: rgb(246, 239, 239);
+        }
+        input[type=number] {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            -webkit-transition: .5s;
+            transition: .5s;
+            outline: 0;
+            font-family: 'Open Sans', serif;
+        }
+
+        .btn.light {
+            background: #fff;
+            color: #333030;
+            border: 1px solid #333030;
+        }
+
+        .flex-parent {
+        display: flex;
+        }
+        .flex-child {
+        flex: 1;
+        padding-left: 50px;
+        }
+
+        #plumberImg {
+            width: 24px;
+            height: 30px;
+        }
+        #banner {
+            background: url('./images/banner.png') no-repeat 0 0;
+            background-position: center;
+            padding-bottom: 50px;
+        }
+        html,body,#banner { /* so that the #dv can fill up the page */
+            width:100%;
+            height:150px;
+        }
+    </style>
+   <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+   <script type="text/javascript">
+       var app = angular.module("PlumberManagement", []);
+       var maxScoredPlumber = {score:0};
+       //Controller Part
+       app.controller("PlumberManagementController", function ($scope, $http, $timeout) {
+
+           //Initialize page with default data which is blank in this example
+           $scope.plumbers = [];
+
+           function findMaxScored(plumber) {
+              if (plumber.score > maxScoredPlumber.score)
+                    maxScoredPlumber = plumber;
+            }
+
+           //HTTP GET- get all repairRequests collection
+           function _refreshPageData() {
+               $http({
+                   method: 'GET',
+                   url: '/plumbers'
+               }).then(function successCallback(response) {
+                   $scope.plumbers = response.data;
+                   $scope.plumbers.forEach(findMaxScored);
+               }, function errorCallback(response) {
+                   console.log(response.statusText);
+               });
+           }
+
+            $scope.intervalFunction = function(){
+                $timeout(function() {
+                    _refreshPageData()
+                    $scope.intervalFunction();
+                }, 1000)
+            };
+
+            $scope.intervalFunction();
+       });
+   </script>
+</head>
+<body ng-app="PlumberManagement" ng-controller="PlumberManagementController">
+    <img id="broken-pipe" src="images/broken-pipe.png" hidden/>
+    <img id="pipe" src="images/pipe.png" hidden/>
+    <div id='banner'></div>
+    <div class='flex-parent'>
+        <div class='flex-child'><canvas id="canvas" width=700 height=600></canvas></div>
+        <div class='flex-child'>
+            <div class="row">
+                <div class="col-1"></div>
+                <div class="col-2">Name</div>
+                <div class="col-2">Status</div>
+                <div class="col-2">Score</div>
+            </div>
+            <div class="row" ng-repeat="plumber in plumbers">
+                <div class="col-1"><image id="plumberImg" src="./images/plumber.png"  ng-if="plumber.status == 'WORKING'"/></div>
+                <div class="col-2">{{ plumber.name }}</div>
+                <div class="col-2">{{ plumber.status }}</div>
+                <div class="col-2">{{ plumber.score }}</div>
+            </div>
+        </div>
+</div>
+
+    <script type="text/javascript">
+
+        //Game
+        
+        // get a refrence to the canvas and its context
+        var canvas = document.getElementById("canvas"),
+            elemLeft = canvas.offsetLeft,
+            elemTop = canvas.offsetTop,
+            ctx = canvas.getContext('2d');
+
+        var imageBrokenPipe = document.getElementById("broken-pipe");
+        var imagePipe = document.getElementById("pipe");
+        // newly spawned objects start at Y=25
+        var spawnLineY = 5;
+        
+        var spawnRate = 3000;
+        
+        // set how fast the objects will fall
+        var spawnRateOfDescent = 0.50;
+        
+        // when was the last object spawned
+        var lastSpawn = -1;
+        
+        // this array holds all spawned object
+        var objects = [];
+        
+        // save the starting time (used to calc elapsed time)
+        var startTime = Date.now();
+
+        canvas.addEventListener('click', function(event) {
+            objects.forEach(function(object) {
+                object.clickFunc(event);
+            });
+        }, false);
+
+        // start animating
+        animate();
+        
+        function spawnRandomObject() {
+        
+            // create the new object
+            var object = {
+                // set this objects type
+                body: imageBrokenPipe,
+                // set x randomly but at least 15px off the canvas edges
+                x: Math.random() * (canvas.width - 30) + 15,
+                // set y to start on the line where objects are spawned
+                y: spawnLineY,
+
+                type: "broken",
+            }
+        
+            // add the new object to the objects[] array
+            objects.push(object);
+        }
+        
+        function postRequest(successFunc){
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", '/requests', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onload = function () {
+                if (xhr.readyState == 4 && xhr.status == "201") {
+                    successFunc()
+                }
+            }
+            xhr.send(JSON.stringify({
+                requesterName: "Player1"
+            }));
+        }
+        
+        function animate() {
+        
+            // get the elapsed time
+            var time = Date.now();
+        
+            // see if its time to spawn a new object
+            if (time > (lastSpawn + spawnRate)) {
+                lastSpawn = time;
+                if (spawnRate != 400)
+                    spawnRate = spawnRate - 100;
+                spawnRandomObject();
+            }
+        
+            // request another animation frame
+            req = requestAnimationFrame(animate);
+        
+            // clear the canvas so all objects can be 
+            // redrawn in new positions
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+        
+            // move each object down the canvas
+            for (var i = 0; i < objects.length; i++) {
+                if (i>0)
+                    var oldObject = objects[i-1];
+                else
+                    var oldObject = null;
+
+                var object = objects[i];
+                object.y += spawnRateOfDescent;
+                ctx.drawImage(
+                    object.body, object.x, object.y, 50, 50
+                )
+
+                if(object.type == "broken" && object.y == canvas.height)
+                    if (confirm("G@me Over! \n\nTop scorer: " + maxScoredPlumber.name+ "\n\nContinue playing?") == true) {
+                        location.reload();
+                    } else {
+                        cancelAnimationFrame(req);
+                    }
+
+                object.clickFunc = function(event){
+                    var x = event.pageX - elemLeft,
+                        y = event.pageY - elemTop;
+                    // Collision detection between clicked offset and element.
+                    if (y > object.y && y < object.y + 200
+                        && x > object.x && x < object.x + 200) {
+                            postRequest(function(){
+                                object.body = imagePipe;
+                                object.type = "fixed"
+                                object.clickFunc = function(){}
+                            });
+                            
+                    }
+                };
+            }
+        
+        }
+        
+        //////
+        
+        
+            </script>
+</body>
+</html>
