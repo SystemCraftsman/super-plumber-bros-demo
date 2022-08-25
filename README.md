@@ -2,6 +2,8 @@
 
 ## Create and Configure Your Managed Kafka Instance
 
+You can run the following commands in order or you can use the RHOAS web interface for creating a Kafka instance.
+
 ```shell
 rhoas login
 ```
@@ -22,3 +24,6 @@ rhoas kafka acl grant-access --producer --consumer --service-account YOUR_SERVIC
 rhoas kafka topic create --name repair-request.events
 ```
 
+## Run the Services
+
+You can run each service with `./mvnw clean package quarkus:dev` command.
