@@ -32,7 +32,7 @@ rhoas kafka topic create --name repair-request.events
 You can run each service with `./mvnw clean package quarkus:dev` command.
 You will need to configure a PostgreSQL database for each service.
 
-## Kafka Connect with the Debezium Conenctor
+## Kafka Connect with the Debezium Connector
 
 You will need to run a Kafka Connect instance with the given configurations under `resources`.
 
